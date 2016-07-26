@@ -1,4 +1,4 @@
-#include <IRremote-.h>
+#include <IRremoteESP8266.h>
 
 /*
  * Uses the IRremoteESP8266 library to interact with the Haier AC unit in my window.
