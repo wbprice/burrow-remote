@@ -27,6 +27,9 @@ const unsigned long TIMER_BUTTON = 0x19F658A7;
 const unsigned long TEMP_UP_BUTTON = 0x19F6A05F;
 const unsigned long TEMP_DOWN_BUTTON = 0x19F6906F;
 
+unsigned int currentTemperature;
+const String url = "/api/v1/thermostat/1";
+
 void connectToWifi() {
   // Connect to WiFi
   Serial.print("Connecting to ");
@@ -46,7 +49,7 @@ void connectToWifi() {
   Serial.println(WiFi.localIP());
 }
 
-String fetchDesiredTemperature(String url) {
+String makeGetRequest(String url) {
 
   String response;
   int bodyIndex;
@@ -82,7 +85,7 @@ String fetchDesiredTemperature(String url) {
   
 }
 
-int getTemperatureFromResponse(String response) {
+int parseJson(String response, String key) {
 
   StaticJsonBuffer<200> jsonBuffer;
 
@@ -102,26 +105,13 @@ int getTemperatureFromResponse(String response) {
     return 0;
   }
 
-  const int temperature = body["temperature"];
+  const int temperature = body[key];
 
   return temperature;
      
 }
 
-void setup() {
-  irsend.begin();
-  Serial.begin(9600);
-  connectToWifi();
-}
-
-int currentTemperature = 78;
-
-void loop() {
-  delay(5000);
-
-  String url = "/api/v1/thermostat/1";
-  int temperature = getTemperatureFromResponse(fetchDesiredTemperature(url));
-
+void adjustTemperature(int temperature) {
   if (currentTemperature != temperature) {
     Serial.println("Temperature needs to be changed");
 
@@ -150,5 +140,25 @@ void loop() {
   else {
     Serial.println("No change is needed\n\n");
   }
+}
 
+void setup() {
+  irsend.begin();
+  Serial.begin(9600);
+  connectToWifi();
+
+  // Get initial state of thermostat.
+  currentTemperature = parseJson(makeGetRequest(url), "temperature"); 
+}
+
+void loop() {
+  
+  // Makes a request to a thermostat url, 
+  // parses the body, 
+  // returns an int representing the desired temperature
+  // submits as many temp up/down signals as required.
+  adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
+
+  delay(5000);
+  
 }
