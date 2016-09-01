@@ -28,7 +28,7 @@ const unsigned long TEMP_UP_BUTTON = 0x19F6A05F;
 const unsigned long TEMP_DOWN_BUTTON = 0x19F6906F;
 
 unsigned int currentTemperature;
-const String url = "/api/v1/thermostat/1";
+const String url = "/api/v1/thermostat/1?is-remote=true";
 
 void connectToWifi() {
   // Connect to WiFi
@@ -42,9 +42,9 @@ void connectToWifi() {
     delay(500);
     Serial.print(".");
   }
-  
+
   Serial.println();
-  Serial.println("WiFi connected");  
+  Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 }
@@ -63,7 +63,7 @@ String makeGetRequest(String url) {
 
   // This will send the request to the server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
+               "Host: " + host + "\r\n" +
                "Connection: close\r\n\r\n");
   unsigned long timeout = millis();
   while (client.available() == 0) {
@@ -77,12 +77,12 @@ String makeGetRequest(String url) {
     response += client.readStringUntil('\r');
   }
 
-  // Get the index of the start of the body 
+  // Get the index of the start of the body
   // (including space occupied by newline characters)
   bodyIndex = response.indexOf("\n\n") + 2;
 
   return response.substring(bodyIndex);
-  
+
 }
 
 int parseJson(String response, String key) {
@@ -90,12 +90,12 @@ int parseJson(String response, String key) {
   StaticJsonBuffer<200> jsonBuffer;
 
   // Length (with one extra character for the null terminator)
-  int str_len = response.length() + 1; 
-  
-  // Prepare the character array (the buffer) 
+  int str_len = response.length() + 1;
+
+  // Prepare the character array (the buffer)
   char char_array[str_len];
-  
-  // Copy it over 
+
+  // Copy it over
   response.toCharArray(char_array, str_len);
 
   JsonObject& body = jsonBuffer.parseObject(char_array);
@@ -108,7 +108,7 @@ int parseJson(String response, String key) {
   const int temperature = body[key];
 
   return temperature;
-     
+
 }
 
 void adjustTemperature(int temperature) {
@@ -134,7 +134,7 @@ void adjustTemperature(int temperature) {
 
     Serial.println("Done adjusting temperature to: ");
     Serial.println(currentTemperature);
-    
+
   }
 
   else {
@@ -148,17 +148,17 @@ void setup() {
   connectToWifi();
 
   // Get initial state of thermostat.
-  currentTemperature = parseJson(makeGetRequest(url), "temperature"); 
+  currentTemperature = parseJson(makeGetRequest(url), "temperature");
 }
 
 void loop() {
-  
-  // Makes a request to a thermostat url, 
-  // parses the body, 
+
+  // Makes a request to a thermostat url,
+  // parses the body,
   // returns an int representing the desired temperature
   // submits as many temp up/down signals as required.
   adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
 
   delay(5000);
-  
+
 }
