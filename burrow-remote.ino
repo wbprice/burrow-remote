@@ -159,6 +159,6 @@ void loop() {
   // submits as many temp up/down signals as required.
   adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
 
-  delay(5000);
+  delay(60000);
 
 }
