@@ -28,7 +28,7 @@ const unsigned long TEMP_UP_BUTTON = 0x19F6A05F;
 const unsigned long TEMP_DOWN_BUTTON = 0x19F6906F;
 
 struct {
-  int32;
+  int32 runCount = 0;
 } rtcMem;
 
 unsigned int currentTemperature = 72;
@@ -157,6 +157,8 @@ void setup() {
   // returns an int representing the desired temperature
   // submits as many temp up/down signals as required.
   adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
+
+  Serial.printf("Run count is currently %d\n", rtcMem.runCount); 
 
   if (ESP.rtcUserMemoryRead(0, (uint32_t*) &rtcMem, sizeof(rtcMem))) {
     Serial.printf("This sketch has run %d times\n", rtcMem.runCount);
