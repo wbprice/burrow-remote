@@ -27,8 +27,9 @@ const unsigned long TIMER_BUTTON = 0x19F658A7;
 const unsigned long TEMP_UP_BUTTON = 0x19F6A05F;
 const unsigned long TEMP_DOWN_BUTTON = 0x19F6906F;
 
-unsigned int currentTemperature;
+unsigned int currentTemperature = 72;
 const String url = "/api/v1/thermostat/1?is-remote=true";
+const int sleepTimeS = 10;
 
 void connectToWifi() {
   // Connect to WiFi
@@ -144,14 +145,8 @@ void adjustTemperature(int temperature) {
 
 void setup() {
   irsend.begin();
-  Serial.begin(9600);
+  Serial.begin(115200);
   connectToWifi();
-
-  // Get initial state of thermostat.
-  currentTemperature = parseJson(makeGetRequest(url), "temperature");
-}
-
-void loop() {
 
   // Makes a request to a thermostat url,
   // parses the body,
@@ -159,6 +154,12 @@ void loop() {
   // submits as many temp up/down signals as required.
   adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
 
-  delay(60000);
+  Serial.println("Going to sleep now");
+  ESP.deepSleep(sleepTimeS * 1000000);
+
+  
+}
+
+void loop() {
 
 }
