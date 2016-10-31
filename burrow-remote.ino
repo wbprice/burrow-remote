@@ -14,7 +14,7 @@ const char* host = "burrow-server.herokuapp.com";
  * Uses the IRremoteESP8266 library to interact with the Haier AC unit in my window.
  */
 
-IRsend irsend(0); //an IR led is connected to GPIO pin 0
+IRsend irsend(5); //an IR led is connected to GPIO pin 0
 
 /*
  * Hex codes corresponding to different actions performed by the remote.
