@@ -14,7 +14,7 @@ const char* host = "burrow-server.herokuapp.com";
  * Uses the IRremoteESP8266 library to interact with the Haier AC unit in my window.
  */
 
-IRsend irsend(5); //an IR led is connected to GPIO pin 5 
+IRsend irsend(5); //an IR led is connected to GPIO pin 5
 
 /*
  * Hex codes corresponding to different actions performed by the remote.
@@ -26,6 +26,10 @@ const unsigned long SPEED_BUTTON = 0x19F620DF;
 const unsigned long TIMER_BUTTON = 0x19F658A7;
 const unsigned long TEMP_UP_BUTTON = 0x19F6A05F;
 const unsigned long TEMP_DOWN_BUTTON = 0x19F6906F;
+
+struct {
+  int32;
+} rtcMem;
 
 unsigned int currentTemperature = 72;
 const String url = "/api/v1/thermostat/1?is-remote=true";
@@ -154,9 +158,15 @@ void setup() {
   // submits as many temp up/down signals as required.
   adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
 
+  if (ESP.rtcUserMemoryRead(0, (uint32_t*) &rtcMem, sizeof(rtcMem))) {
+    Serial.printf("This sketch has run %d times\n", rtcMem.runCount);
+    rtcMem.runCount = rtcMem.runCount + 1;
+    Serial.printf("Incrementing to %d.\n", rtcMem.runCount);
+    ESP.rtcUserMemoryWrite(0, (uint32_t*) &rtcMem, sizeof(rtcMem));
+  }
+    
   Serial.println("Going to sleep now");
   ESP.deepSleep(sleepTimeS * 1000000);
-
   
 }
 
