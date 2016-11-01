@@ -27,11 +27,12 @@ const unsigned long TIMER_BUTTON = 0x19F658A7;
 const unsigned long TEMP_UP_BUTTON = 0x19F6A05F;
 const unsigned long TEMP_DOWN_BUTTON = 0x19F6906F;
 
-struct {
-  int32 runCount = 0;
-} rtcMem;
+struct RtcStore {
+  int currentTemperature;
+};
 
-unsigned int currentTemperature = 72;
+RtcStore rtcMem = { 72 };
+
 const String url = "/api/v1/thermostat/1?is-remote=true";
 const int sleepTimeS = 10;
 
@@ -117,28 +118,27 @@ int parseJson(String response, String key) {
 }
 
 void adjustTemperature(int temperature) {
-  if (currentTemperature != temperature) {
+  if (rtcMem.currentTemperature != temperature) {
     Serial.println("Temperature needs to be changed");
 
-    if (currentTemperature > temperature) {
-      while (currentTemperature > temperature) {
+    if (rtcMem.currentTemperature > temperature) {
+      while (rtcMem.currentTemperature > temperature) {
         irsend.sendNEC(TEMP_DOWN_BUTTON, 32);
-        currentTemperature -= 1;
+        rtcMem.currentTemperature -= 1;
         delay(300);
       }
     }
 
-    else if (temperature > currentTemperature) {
-      Serial.println("Temperature needs to be raised");
-      while (temperature > currentTemperature) {
+    else if (temperature > rtcMem.currentTemperature) {
+      while (temperature > rtcMem.currentTemperature) {
         irsend.sendNEC(TEMP_UP_BUTTON, 32);
-        currentTemperature += 1;
+        rtcMem.currentTemperature += 1;
         delay(300);
       }
     }
 
     Serial.println("Done adjusting temperature to: ");
-    Serial.println(currentTemperature);
+    Serial.println(rtcMem.currentTemperature);
 
   }
 
@@ -152,21 +152,27 @@ void setup() {
   Serial.begin(115200);
   connectToWifi();
 
-  // Makes a request to a thermostat url,
-  // parses the body,
-  // returns an int representing the desired temperature
-  // submits as many temp up/down signals as required.
-  adjustTemperature(parseJson(makeGetRequest(url), "temperature"));
-
-  Serial.printf("Run count is currently %d\n", rtcMem.runCount); 
-
   if (ESP.rtcUserMemoryRead(0, (uint32_t*) &rtcMem, sizeof(rtcMem))) {
-    Serial.printf("This sketch has run %d times\n", rtcMem.runCount);
-    rtcMem.runCount = rtcMem.runCount + 1;
-    Serial.printf("Incrementing to %d.\n", rtcMem.runCount);
+
+    // If the current temperature coming back from RTC memory is obviously wrong, set it to something sane.
+    if (rtcMem.currentTemperature > 100 || rtcMem.currentTemperature < 0) {
+      rtcMem.currentTemperature = 72;
+    }
+
+    // Makes a request to a thermostat url,
+    String response = makeGetRequest(url);
+
+    // Parse the body of the response, saving the desired temperature.
+    int temperature = parseJson(response, "temperature")
+
+    // Fire off as many IR transmissions as are necessary to update the thermostat.
+    adjustTemperature(temperature);
+
+    // Write the updated temperature to RTC memory.
     ESP.rtcUserMemoryWrite(0, (uint32_t*) &rtcMem, sizeof(rtcMem));
+
   }
-    
+
   Serial.println("Going to sleep now");
   ESP.deepSleep(sleepTimeS * 1000000);
   
