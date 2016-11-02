@@ -34,7 +34,7 @@ struct RtcStore {
 RtcStore rtcMem = { 72 };
 
 const String url = "/api/v1/thermostat/1?is-remote=true";
-const int sleepTimeS = 10;
+const int sleepTimeS = 600; // Sleep for ten minutes.
 
 void connectToWifi() {
   // Connect to WiFi
@@ -163,7 +163,7 @@ void setup() {
     String response = makeGetRequest(url);
 
     // Parse the body of the response, saving the desired temperature.
-    int temperature = parseJson(response, "temperature")
+    int temperature = parseJson(response, "temperature");
 
     // Fire off as many IR transmissions as are necessary to update the thermostat.
     adjustTemperature(temperature);
